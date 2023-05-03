@@ -24,25 +24,38 @@ async function extractCoaches() {
       for (let i = 0; i < hrefs.length; i++) {
         const href = hrefs[i];
         const response = await fetch(href);
+        const mailRegex = /[a-zA-Z0-9._+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+/; 
         const text = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, 'text/html');
-        const trainerElement = doc.querySelector('#w0 > tbody > tr:nth-child(7) > td > span');
+        const trainerElement = doc.querySelector('#w0 > tbody > tr:nth-child(7) > td > a');
         if (trainerElement) {
-          const coach = trainerElement.textContent.trim();
+          const coach = trainerElement.getAttribute("href");
+          const email = coach.match(mailRegex)[0]
           coaches.push(coach);
         }
       }
   
       // Remove duplicates, format coach emails and join them as comma-separated string
       const coachEmails = coaches
-        .filter((coach, index, self) => self.indexOf(coach) === index)
-        .map(coach => {
-            // Replace umlaut characters with their respective replacements
-            coach = coach.replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue");
-            return coach.replace(/ /g, ".").toLowerCase() + "@tumo.center";
-        })
-        .join(",");
+      // the substring to remove
+      const substring = "https://mail.google.com/mail/?view=cm&to=";
+      
+      // a new array to store the emails
+      const emails = [];
+      
+      // loop through the coaches array
+      for (let i = 0; i < coaches.length; i++) {
+        // remove the substring from each element and push it to the emails array
+        emails.push(coaches[i].replace(substring, ""));
+      }
+      
+      // create a Set from the emails array to filter out duplicates
+      const uniqueEmails = new Set(emails)
+      
+      // convert the Set back to an array and log it
+      console.log(Array.from(uniqueEmails));
+        
         if (modal) {
             // Get the modal header element
             var header = modal.querySelector(".modal-header");
@@ -59,7 +72,7 @@ async function extractCoaches() {
       // Open a new window with a Gmail compose window populated with email addresses of all coaches
                 const emailMessage = "Default";
                 const emailSubject = workshopName;
-                const gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" + coachEmails + "&su=" + encodeURIComponent(emailSubject) + "&body=" + encodeURIComponent(emailMessage);
+                const gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" + Array.from(uniqueEmails).join(","); + "&su=" + encodeURIComponent(emailSubject) + "&body=" + encodeURIComponent(emailMessage);
                 window.open(gmailUrl);
                 } else {
                 console.log("Table does not exist.");
