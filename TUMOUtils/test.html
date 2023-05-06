@@ -26,26 +26,28 @@
 
 	<h1>Email Form</h1>
 
-	<form action="send-email.php" method="post">
+	<form>
 		<label for="to">To:</label>
 		<input type="email" id="to" name="to" required><br><br>
-
+	
 		<label for="subject">Subject:</label>
 		<input type="text" id="subject" name="subject" required><br><br>
-
+	
 		<label for="message">Message:</label>
 		<textarea id="message" name="message" rows="10" cols="50" required></textarea><br><br>
-
-		<input type="submit" value="Send Email">
+	
+		<input type="button" value="Send Email" id="sendEmailBtn">
+	
 	</form>
+	
 	<br>
 	<button type="button" onclick="createNewTemplate()">Create New Template</button>
 
 
-	<select id="templateList"></select>
+	
 	<button id="deleteTemplateBtn">Delete Template</button>
 	<input type="button" value="Save" onclick="saveTemplate()">
-
+	<select id="templateList"></select>
 
 	<script src="test.js"></script>
 </body>

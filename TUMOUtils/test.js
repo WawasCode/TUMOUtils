@@ -1,31 +1,27 @@
-// // Populate the template list dropdown
-// var draggable = document.getElementById("draggable");
-
-// draggable.addEventListener("dragstart", function(event) {
-// 	event.dataTransfer.setData("text/plain", null);
-// });
-
-// document.addEventListener("dragover", function(event) {
-// 	event.preventDefault();
-// });
-
-// document.addEventListener("drop", function(event) {
-// 	event.preventDefault();
-// 	var x = event.clientX;
-// 	var y = event.clientY;
-// 	draggable.style.top = (y - draggable.offsetHeight/2) + "px";
-// 	draggable.style.left = (x - draggable.offsetWidth/2) + "px";
-// });
-
-
+// Populate the template list dropdown
 var templateList = document.getElementById("templateList");
 for (var i = 0; i < localStorage.length; i++) {
-	var key = localStorage.key(i);
-	var option = document.createElement("option");
-	option.text = key;
-	templateList.add(option);
+    var key = localStorage.key(i);
+    var option = document.createElement("option");
+    option.text = key;
+    templateList.add(option);
 }
-
+document.getElementById("sendEmailBtn").addEventListener("click", function() {
+	// Get the recipient's email address, subject, and message
+	var to = document.getElementById("to").value;
+	var subject = document.getElementById("subject").value;
+	var message = document.getElementById("message").value;
+  
+	// Construct the email link with the recipient's email address, subject, and message
+	var gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" +
+	  "&to=" + encodeURIComponent(to) +
+	  "&su=" + encodeURIComponent(subject) +
+	  "&body=" + encodeURIComponent(message);
+  
+	// Open the email link in a new tab/window
+	window.open(gmailUrl, "_blank");
+  });
+  
 // Save the template
 function saveTemplate() {
     var selectedOption = document.getElementById("templateList").value;
@@ -43,36 +39,34 @@ function saveTemplate() {
     alert("Template saved successfully!");
 }
 
-
-
 // Load a template
 function loadTemplate(name) {
-	var template = JSON.parse(localStorage.getItem(name));
-	if (template != null) {
-		document.getElementById("subject").value = template.subject;
-		document.getElementById("message").value = template.message;
-		alert("Template loaded successfully!");
-	} else {
-		alert("Template not found!");
-	}
+    var template = JSON.parse(localStorage.getItem(name));
+    if (template != null) {
+        document.getElementById("to").value = template.to;
+        document.getElementById("subject").value = template.subject;
+        document.getElementById("message").value = template.message;
+        alert("Template loaded successfully!");
+    } else {
+        alert("Template not found!");
+    }
 }
 
 // Add an event listener to the template list dropdown
 templateList.addEventListener("change", function() {
-	loadTemplate(this.value);
+    loadTemplate(this.value);
 });
 
 // Create a new template
-
 function createNewTemplate() {
     var name = prompt("Enter a name for the new template:");
     if (name != null && name != "") {
         // Clear the form fields
+        document.getElementById("to").value = "";
         document.getElementById("subject").value = "";
         document.getElementById("message").value = "";
         
         // Add the new template name to the dropdown list
-        var templateList = document.getElementById("templateList");
         var option = document.createElement("option");
         option.text = name;
         templateList.add(option);
@@ -82,12 +76,30 @@ function createNewTemplate() {
     }
 }
 
+// Send email
+function sendEmail() {
+    var to = document.getElementById("to").value;
+    var subject = document.getElementById("subject").value;
+    var message = document.getElementById("message").value;
+
+    // replace <username> with "Charly" and <YourName> with "Bob"
+    message = message.replace("<username>", "Charly").replace("<YourName>", "Bob");
+
+    var emailSubject = subject;
+    var emailMessage = message;
+    var gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" + "&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(emailSubject) + "&body=" + encodeURIComponent(emailMessage) + "&bcc=";
+
+    window.open(gmailUrl);
+}
+
+// Add event listeners
+document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
 document.getElementById("deleteTemplateBtn").addEventListener("click", function() {
-	var selectedOption = templateList.options[templateList.selectedIndex];
-	if (selectedOption != null) {
-		var name = selectedOption.text;
-		localStorage.removeItem(name);
-		templateList.remove(templateList.selectedIndex);
-		alert("Template deleted successfully!");
-	}
+    var selectedOption = templateList.options[templateList.selectedIndex];
+    if (selectedOption != null) {
+        var name = selectedOption.text;
+        localStorage.removeItem(name);
+        templateList.remove(templateList.selectedIndex);
+        alert("Template deleted successfully!");
+    }
 });
