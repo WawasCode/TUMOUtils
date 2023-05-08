@@ -6,21 +6,22 @@ for (var i = 0; i < localStorage.length; i++) {
     option.text = key;
     templateList.add(option);
 }
-document.getElementById("sendEmailBtn").addEventListener("click", function() {
-	// Get the recipient's email address, subject, and message
-	var to = document.getElementById("to").value;
-	var subject = document.getElementById("subject").value;
-	var message = document.getElementById("message").value;
+function replacePlaceholders() {
+	let messageInput = document.getElementById("message");
+	let message = messageInput.value;
+	let placeholders = message.match(/<\w+>/g);
   
-	// Construct the email link with the recipient's email address, subject, and message
-	var gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" +
-	  "&to=" + encodeURIComponent(to) +
-	  "&su=" + encodeURIComponent(subject) +
-	  "&body=" + encodeURIComponent(message);
+	if (placeholders) {
+	  for (let placeholder of placeholders) {
+		let name = placeholder.slice(1, -1);
+		let placeholderBox = `<div style="background-color: #0077be; color: white; padding: 5px; margin: 5px; display: inline-block;">${name}</div>`;
+		message = message.replace(placeholder, placeholderBox);
+	  }
+	  messageInput.innerHTML = message;
+	}
+  }
   
-	// Open the email link in a new tab/window
-	window.open(gmailUrl, "_blank");
-  });
+  
   
 // Save the template
 function saveTemplate() {
@@ -76,24 +77,34 @@ function createNewTemplate() {
     }
 }
 
-// Send email
-function sendEmail() {
-    var to = document.getElementById("to").value;
-    var subject = document.getElementById("subject").value;
-    var message = document.getElementById("message").value;
-
-    // replace <username> with "Charly" and <YourName> with "Bob"
-    message = message.replace("<username>", "Charly").replace("<YourName>", "Bob");
-
-    var emailSubject = subject;
-    var emailMessage = message;
-    var gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" + "&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(emailSubject) + "&body=" + encodeURIComponent(emailMessage) + "&bcc=";
-
-    window.open(gmailUrl);
+function sendEmail(event) {
+	event.preventDefault();
+	var to = document.getElementById("to").value;
+	var subject = document.getElementById("subject").value;
+	var message = document.getElementById("message").value;
+	var username = "Charly"
+	var myname = "Bozo"
+	// Replace placeholders with actual values
+	message = message.replace(/<username>/g, username).replace(/<YourName>/g, myname);
+	
+	// Send email using Gmail API
+	var emailSubject = subject;
+	var emailMessage = message;
+	var gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" + "&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(emailSubject) + "&body=" + encodeURIComponent(emailMessage);
+	window.open(gmailUrl);
 }
 
+document.getElementById("emailForm").addEventListener("submit", sendEmail);
+
+
+
+
+  document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
+  
+
+  
+
 // Add event listeners
-document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
 document.getElementById("deleteTemplateBtn").addEventListener("click", function() {
     var selectedOption = templateList.options[templateList.selectedIndex];
     if (selectedOption != null) {
