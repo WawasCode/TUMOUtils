@@ -9,10 +9,12 @@
 	<h1>Template Creator</h1>
 	
       <button id="btnUsername">Username</button>
-      <button id="btnCoachname">Coachname</button>
+      <button id="btnCoachname">Coach name</button>
+	  <button id="btnUserEmail">Teilnehmer Emailadresse</button>
       <button id="btnCoacheEmail">Coache Emailadresse</button>
       <button id="btnSessionZeit">Session Zeit</button>
       <button id="btnTimer">Timer</button>
+	  
 	  
 	<form id="emailForm">
 		<br>
@@ -31,16 +33,16 @@
 	</form>
 	
 	<br>
-	<button id="create"type="button" onclick="createNewTemplate()">Create New Template</button>
+	<button id="create"type="button">Create New Template</button>
 
 
 	
 	<button id="deleteTemplateBtn">Delete Template</button>
-	<input type="button" value="Save" onclick="saveTemplate()">
-	<button id="btnImport" onclick="importTemplate()">  <i class="fas fa-upload"></i> Import</button>
-<button id="btnExport" onclick = "exportTemplate()"><i class="fas fa-download"></i> Export</button>
+	<input type="button" value="Save" id = "save">
+	<button id="btnImport">  <i class="fas fa-upload"></i> Import</button>
+<button id="btnExport"><i class="fas fa-download"></i> Export</button>
 	<select id="templateList"></select>
-
+	   
 	<script src="test.js"></script>
 	<link rel="stylesheet" href="styles.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
