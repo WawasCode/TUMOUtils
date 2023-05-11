@@ -114,72 +114,75 @@ document.getElementById("deleteTemplateBtn").addEventListener("click", function(
         alert("Template deleted successfully!");
     }
 });
-document.getElementById("btnExport").addEventListener("click", exportTemplate);
+function updateTemplateList() {
+  // Get the select element
+  const templateSelect = document.getElementById('templateList');
 
-function exportTemplates() {
-    var templates = {};
-    for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        var template = JSON.parse(localStorage.getItem(key));
-        templates[key] = template;
-    }
-    var filename = "templates.json";
-    var file = new Blob([JSON.stringify(templates)], {type: "application/json"});
-    if (window.navigator.msSaveOrOpenBlob) {
-        window.navigator.msSaveOrOpenBlob(file, filename);
-    } else {
-        var a = document.createElement("a");
-        var url = URL.createObjectURL(file);
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 0);
-    }
+  // Clear any existing options
+  templateSelect.innerHTML = '';
+
+  // Add a default option
+  const defaultOption = document.createElement('option');
+  defaultOption.text = 'Select a template';
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  templateSelect.add(defaultOption);
+
+  // Add an option for each template in the templates array
+  for (const template of templates) {
+    const option = document.createElement('option');
+    option.text = template.name;
+    option.value = template.name;
+    templateSelect.add(option);
+  }
 }
 
+function importTemplate() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
 
-function importTemplates() {
-  var fileInput = document.createElement('input');
-  fileInput.type = 'file';
+  input.onchange = function () {
+    const file = this.files[0];
 
-  fileInput.addEventListener('change', function(e) {
-    var file = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsText(file, 'UTF-8');
 
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        var data = JSON.parse(e.target.result);
-        var templates = data.templates;
+    reader.onload = readerEvent => {
+      const content = readerEvent.target.result;
+      const template = JSON.parse(content);
 
-        for (var i = 0; i < templates.length; i++) {
-          var name = templates[i].name;
-          var existingTemplate = localStorage.getItem(name);
+      const templateList = JSON.parse(localStorage.getItem('templateList')) || [];
+      const index = templateList.findIndex(t => t.name === template.name);
 
-          if (existingTemplate) {
-            var replace = confirm('A template with the name "' + name + '" already exists. Do you want to replace it?');
-
-            if (!replace) {
-              name += ' Copy';
-            }
-          }
-
-          var template = {to: templates[i].to, subject: templates[i].subject, message: templates[i].message};
-          localStorage.setItem(name, JSON.stringify(template));
-        }
-
-        alert('Templates imported successfully!');
-      } catch (err) {
-        alert('Error importing templates: ' + err);
+      if (index >= 0) {
+        alert('Template with the same name already exists');
+        return;
       }
-    };
 
-    reader.readAsText(file);
-  });
+      templateList.push(template);
+      localStorage.setItem('templateList', JSON.stringify(templateList));
 
-  fileInput.click();
+      updateTemplateList();
+    }
+  }
+
+  input.click();
 }
 
+function exportTemplate() {
+  const templateList = JSON.parse(localStorage.getItem('templateList')) || [];
+  if (templateList.length === 0) {
+    alert('No templates found to export');
+    return;
+  }
+
+  const select = document.getElementById('templateList');
+  const index = select.selectedIndex;
+  const template = templateList[index];
+  const filename = template.name + '.json';
+  const data = JSON.stringify(template, null, 2);
+
+  const blob = new Blob([data], { type: 'application/json' });
+  saveAs(blob, filename);
+}
