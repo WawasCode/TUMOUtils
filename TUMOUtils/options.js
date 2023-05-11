@@ -173,7 +173,7 @@ document.getElementById('emailButton').addEventListener('click', function() {
 
 
   document.getElementById("templateButton").addEventListener("click", function() {
-    window.open("template.html"); // Open template.html in a new window
+    window.open("test.html"); // Open template.html in a new window
   });
 
 

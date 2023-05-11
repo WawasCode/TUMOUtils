@@ -114,75 +114,90 @@ document.getElementById("deleteTemplateBtn").addEventListener("click", function(
         alert("Template deleted successfully!");
     }
 });
-function updateTemplateList() {
-  // Get the select element
-  const templateSelect = document.getElementById('templateList');
-
-  // Clear any existing options
-  templateSelect.innerHTML = '';
-
-  // Add a default option
-  const defaultOption = document.createElement('option');
-  defaultOption.text = 'Select a template';
-  defaultOption.disabled = true;
-  defaultOption.selected = true;
-  templateSelect.add(defaultOption);
-
-  // Add an option for each template in the templates array
-  for (const template of templates) {
-    const option = document.createElement('option');
-    option.text = template.name;
-    option.value = template.name;
-    templateSelect.add(option);
-  }
-}
-
 function importTemplate() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
+  var fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".json";
 
-  input.onchange = function () {
-    const file = this.files[0];
+  fileInput.onchange = function(event) {
+    var file = event.target.files[0];
+    var reader = new FileReader();
 
-    const reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
-
-    reader.onload = readerEvent => {
-      const content = readerEvent.target.result;
-      const template = JSON.parse(content);
-
-      const templateList = JSON.parse(localStorage.getItem('templateList')) || [];
-      const index = templateList.findIndex(t => t.name === template.name);
-
-      if (index >= 0) {
-        alert('Template with the same name already exists');
-        return;
+    reader.onload = function() {
+      var json = reader.result;
+      var template = JSON.parse(json);
+      
+      var templateName = prompt("Enter a name for the imported template:");
+      if (templateName !== null && templateName !== "") {
+        localStorage.setItem(templateName, json);
+        
+        var option = document.createElement("option");
+        option.text = templateName;
+        templateList.add(option);
+        templateList.value = templateName;
+        
+        alert("Template imported successfully!");
       }
+    };
+    
+    reader.readAsText(file);
+  };
 
-      templateList.push(template);
-      localStorage.setItem('templateList', JSON.stringify(templateList));
-
-      updateTemplateList();
-    }
-  }
-
-  input.click();
+  fileInput.click();
 }
+
 
 function exportTemplate() {
-  const templateList = JSON.parse(localStorage.getItem('templateList')) || [];
-  if (templateList.length === 0) {
-    alert('No templates found to export');
+  var templateName = document.getElementById("templateList").value;
+  if (!templateName) {
+    alert("Please select a template to export.");
     return;
   }
+  var template = JSON.parse(localStorage.getItem(templateName));
+  var data = JSON.stringify(template);
+  var blob = new Blob([data], { type: "application/json" });
+  saveAs(blob, templateName + ".json");
+}
 
-  const select = document.getElementById('templateList');
-  const index = select.selectedIndex;
-  const template = templateList[index];
-  const filename = template.name + '.json';
-  const data = JSON.stringify(template, null, 2);
 
-  const blob = new Blob([data], { type: 'application/json' });
-  saveAs(blob, filename);
+// Get references to the buttons and text area
+// Add event listeners for the buttons
+document.getElementById("btnUsername").addEventListener("click", function() {
+  insertAtCursor(document.getElementById("subject"), "<username>");
+  insertAtCursor(document.getElementById("to"), "<username>");
+});
+
+document.getElementById("btnCoachname").addEventListener("click", function() {
+  insertAtCursor(document.getElementById("subject"), "<coachname>");
+  insertAtCursor(document.getElementById("to"), "<coachname>");
+});
+
+document.getElementById("btnCoacheEmail").addEventListener("click", function() {
+  insertAtCursor(document.getElementById("subject"), "<coacheemail>");
+  insertAtCursor(document.getElementById("to"), "<coacheemail>");
+});
+
+document.getElementById("btnSessionZeit").addEventListener("click", function() {
+  insertAtCursor(document.getElementById("subject"), "<sessionzeit>");
+  insertAtCursor(document.getElementById("to"), "<sessionzeit>");
+});
+
+document.getElementById("btnTimer").addEventListener("click", function() {
+  var timer = prompt("Enter time (DD:HH:MM): ");
+  if (timer) {
+    insertAtCursor(document.getElementById("subject"), "<" + timer + ">");
+    insertAtCursor(document.getElementById("to"), "<" + timer + ">");
+  }
+});
+
+
+// Function to insert text at the cursor position in the text area
+function insertAtCursor(element, text) {
+  var cursorPosition = element.selectionStart;
+  var currentValue = element.value;
+  var newValue = currentValue.slice(0, cursorPosition) + text + currentValue.slice(cursorPosition);
+
+  element.value = newValue;
+  element.selectionStart = cursorPosition + text.length;
+  element.selectionEnd = cursorPosition + text.length;
 }
