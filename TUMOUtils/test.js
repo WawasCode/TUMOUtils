@@ -1,8 +1,43 @@
 // Populate the template list dropdown
-document.getElementById("create").addEventListener("click", createNewTemplate);
-document.getElementById("save").addEventListener("click", saveTemplate);
-document.getElementById("btnImport").addEventListener("click", importTemplate);
-document.getElementById("btnExport").addEventListener("click", exportTemplate);
+var templateList = document.getElementById("templateList");
+chrome.storage.sync.get(null, function(items) {
+  for (var key in items) {
+    var option = document.createElement("option");
+    option.text = key;
+    templateList.add(option);
+  }
+});
+
+  document.getElementById("create").addEventListener("click", createNewTemplate);
+  document.getElementById("save").addEventListener("click", saveTemplate);
+  document.getElementById("btnImport").addEventListener("click", importTemplate);
+  document.getElementById("btnExport").addEventListener("click", exportTemplate);
+  templateList.addEventListener("change", function() {
+    loadTemplate(this.value);
+});
+document.getElementById("emailForm").addEventListener("submit", sendEmail);
+  document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
+
+// Add event listeners
+document.getElementById("deleteTemplateBtn").addEventListener("click", function() {
+  var selectedOption = templateList.options[templateList.selectedIndex];
+  if (selectedOption != null) {
+      var name = selectedOption.text;
+      chrome.storage.sync.remove(name, function() {
+          // Remove the corresponding context menu item
+          chrome.contextMenus.remove(name, function() {
+              // Remove the option from the dropdown list
+              templateList.remove(templateList.selectedIndex);
+              alert("Template deleted successfully!");
+          });
+      });
+  }
+});
+
+
+
+
+
 
 function create() {
   var name = prompt(name);
@@ -13,50 +48,35 @@ function create() {
   });
 }
 
-var templateList = document.getElementById("templateList");
-for (var i = 0; i < localStorage.length; i++) {
-    var key = localStorage.key(i);
-    var option = document.createElement("option");
-    option.text = key;
-    templateList.add(option);
-}
-function replacePlaceholders() {
-	let messageInput = document.getElementById("message");
-	let message = messageInput.value;
-	let placeholders = message.match(/<\w+>/g);
-  
-	if (placeholders) {
-	  for (let placeholder of placeholders) {
-		let name = placeholder.slice(1, -1);
-		let placeholderBox = `<div style="background-color: #0077be; color: white; padding: 5px; margin: 5px; display: inline-block;">${name}</div>`;
-		message = message.replace(placeholder, placeholderBox);
-	  }
-	  messageInput.innerHTML = message;
-	}
-  }
+
   
   
   
 // Save the template
 function saveTemplate() {
-    var selectedOption = document.getElementById("templateList").value;
-    if (selectedOption == "") {
-        alert("Please select a template from the dropdown list first.");
-        return;
-    }
-    
-    var to = document.getElementById("to").value;
-    var subject = document.getElementById("subject").value;
-    var message = document.getElementById("message").value;
-    var template = {to: to, subject: subject, message: message};
-    localStorage.setItem(selectedOption, JSON.stringify(template));
-    
+  var selectedOption = document.getElementById("templateList").value;
+  if (selectedOption == "") {
+      alert("Please select a template from the dropdown list first.");
+      return;
+  }
+  
+  var to = document.getElementById("to").value;
+  var subject = document.getElementById("subject").value;
+  var message = document.getElementById("message").value;
+  var template = {to: to, subject: subject, message: message};
+  
+  // Save the template in Chrome storage
+  var storageObj = {};
+  storageObj[selectedOption] = template;
+  chrome.storage.sync.set(storageObj, function() {
     alert("Template saved successfully!");
+  });
 }
 
-// Load a template
+
 function loadTemplate(name) {
-    var template = JSON.parse(localStorage.getItem(name));
+  chrome.storage.sync.get(name, function(items) {
+    var template = items[name];
     if (template != null) {
         document.getElementById("to").value = template.to;
         document.getElementById("subject").value = template.subject;
@@ -65,14 +85,33 @@ function loadTemplate(name) {
     } else {
         alert("Template not found!");
     }
+  });
 }
 
+
 // Add an event listener to the template list dropdown
-templateList.addEventListener("change", function() {
-    loadTemplate(this.value);
-});
+
 
 // Create a new template
+function generateContext(name, func) {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    var url = tabs[0].url;
+    if (url && url.includes("https://360.de.tumo.world/")) { // check if URL matches the desired pattern
+      var menuItem = chrome.contextMenus.create({
+        id: name,
+        title: name,
+        contexts: ["page", "selection"],
+        onclick: function(info, tab) {
+          console.log("Context menu item clicked: " + info.menuItemId);
+          func; // call the specified function
+        }
+      });
+    }
+  });
+}
+
+
+
 function createNewTemplate() {
   var name = prompt("Enter a name for the new template:");
   if (name != null && name != "") {
@@ -80,35 +119,83 @@ function createNewTemplate() {
       document.getElementById("to").value = "";
       document.getElementById("subject").value = "";
       document.getElementById("message").value = "";
-      
+
       // Add the new template name to the dropdown list
       var option = document.createElement("option");
       option.text = name;
       templateList.add(option);
       templateList.value = name;
-      
-      // Create a new context menu item with the template name
-      chrome.contextMenus.create({
-          id: name,
-          title: name,
-          contexts: ["all"]
-      });
-      
+
       alert("New template created successfully!");
   }
-  
-  // Add event listener for context menu item clicks
-  chrome.contextMenus.onClicked.addListener(function(info, tab) {
-      if (info.menuItemId == name) {
-          console.log(name)
-      }
-  });
 }
+ function fillTemplate(tab, template) {
+  console.log("hi")
+  try {
+    // get the HTML table element by its ID
+    const table = document.getElementById("w0");
+    if (!table) {
+      throw new Error("Table not found");
+    }
+    
+    // get the table rows as an array
+    const rows = Array.from(table.getElementsByTagName("tr"));
 
-function sendFillMail(name){
+    // initialize variables
+    let usermail = "";
+    let username = "";
+    let coachName = "";
+    let coachEmail = "";
+    let sessionZeit = "";
 
+    // loop through the rows and extract the information
+    rows.forEach((row) => {
+      const cells = row.getElementsByTagName("td");
+      if (cells.length === 2) {
+        const label = row.getElementsByTagName("th")[0].textContent.trim();
+        const value = cells[0].textContent.trim();
 
+        switch (label) {
+          case "Vollständiger Name":
+            username = value;
+            break;
+          case "TUMO-ID":
+            usermail = value + "@tumo.world";
+            break;
+          case "Trainer":
+            coachName = value.trim();
+            coachEmail = row.querySelector("a")?.href.split(":")[1];
+            break;
+          case "sl-session":
+            sessionZeit = cells[0].innerHTML.trim().replace(/<br>/g, "\n");
+            break;
+          default:
+            break;
+        }
+      }
+    });
 
+    // print the extracted information to the console
+    console.log("Username: ", username);
+    console.log("Usermail: ", usermail);
+    console.log("Coach Name: ", coachName);
+    console.log("Coach Email: ", coachEmail);
+    console.log("Session Zeit: ", sessionZeit);
+
+    // replace placeholders in the email template with the extracted information
+    let body = template.message.replace(/<username>/g, username);
+    body = body.replace(/<coachnname>/g, coachName);
+    body = body.replace(/<coachemail>/g, coachEmail);
+    body = body.replace(/<sessionzeit>/g, sessionZeit);
+
+    // open the email client with the filled template
+    chrome.tabs.update(tab.id, {active: true}, function() {
+      window.open(`mailto:${template.to}?subject=${template.subject}&body=${encodeURIComponent(body)}`);
+    });
+  } catch (error) {
+    console.error(error);
+    // handle the error here, e.g. show an error message to the user
+  }
 }
 
 
@@ -130,30 +217,7 @@ function sendEmail(event) {
 }
 
 
-document.getElementById("emailForm").addEventListener("submit", sendEmail);
 
-
-
-
-  document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
-  
-
-  
-
-// Add event listeners
-document.getElementById("deleteTemplateBtn").addEventListener("click", function() {
-  var selectedOption = templateList.options[templateList.selectedIndex];
-  if (selectedOption != null) {
-      var name = selectedOption.text;
-      localStorage.removeItem(name);
-      templateList.remove(templateList.selectedIndex);
-      
-      // Remove the corresponding context menu item
-      chrome.contextMenus.remove(name, function() {
-          alert("Template deleted successfully!");
-      });
-  }
-});
 
 function importTemplate() {
   var fileInput = document.createElement("input");
@@ -170,21 +234,16 @@ function importTemplate() {
       
       var templateName = prompt("Enter a name for the imported template:");
       if (templateName !== null && templateName !== "") {
-        localStorage.setItem(templateName, json);
-        
-        var option = document.createElement("option");
-        option.text = templateName;
-        templateList.add(option);
-        templateList.value = templateName;
-        
-        // Create a new context menu item with the imported template name
-        chrome.contextMenus.create({
-            id: templateName,
-            title: templateName,
-            contexts: ["all"]
+        chrome.storage.sync.set({ [templateName]: json }, function() {
+          var option = document.createElement("option");
+          option.text = templateName;
+          templateList.add(option);
+          templateList.value = templateName;
+          
+    
+          
+          alert("Template imported successfully!");
         });
-        
-        alert("Template imported successfully!");
       }
     };
     
@@ -202,16 +261,20 @@ function exportTemplate() {
     alert("Please select a template to export.");
     return;
   }
-  var template = JSON.parse(localStorage.getItem(templateName));
-  var data = JSON.stringify(template);
-  var blob = new Blob([data], { type: "application/json" });
-  saveAs(blob, templateName + ".json");
+  
+  chrome.storage.sync.get(templateName, function(result) {
+    var template = result[templateName];
+    var data = JSON.stringify(template);
+    var blob = new Blob([data], { type: "application/json" });
+    saveAs(blob, templateName + ".json");
+  });
 }
 
 
 
-var lastActiveInput;
 
+var lastActiveInput;
+try{
 document.getElementById("to").addEventListener("click", function() {
   lastActiveInput = "to";
 });
@@ -251,7 +314,7 @@ document.getElementById("btnCoachname").addEventListener("click", function() {
     insertAtCursor(input, text);
   } else if (lastActiveInput === "message") {
     var input = document.getElementById("message");
-    var text = "<coachnname>";
+    var text = "<coachname>";
     insertAtCursor(input, text);
   } 
 });
@@ -269,6 +332,21 @@ document.getElementById("btnUsername").addEventListener("click", function() {
   } else if (lastActiveInput === "message") {
     var input = document.getElementById("message");
     var text = "<username>";
+    insertAtCursor(input, text);
+  } 
+});
+document.getElementById("btnUserEmail").addEventListener("click", function() {
+  if (lastActiveInput === "subject") {
+    var input = document.getElementById("subject");
+    var text = "<usermail>";
+    insertAtCursor(input, text);
+  } else if (lastActiveInput === "to") {
+    var input = document.getElementById("to");
+    var text = "<usermail>";
+    insertAtCursor(input, text);
+  } else if (lastActiveInput === "message") {
+    var input = document.getElementById("message");
+    var text = "<usermail>";
     insertAtCursor(input, text);
   } 
 });
@@ -310,7 +388,11 @@ document.getElementById("btnTimer").addEventListener("click", function() {
   }
 });
   
-
+}
+catch(e)
+{ 
+  console.log("no buttons here")
+}
 function insertAtCursor(input, text) {
   var scrollTop = input.scrollTop;
   var cursorPosition = input.selectionStart;

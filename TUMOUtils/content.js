@@ -1,4 +1,76 @@
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  console.log("message resived")
+  if (message.action === "fillMail") {
+    var templateId = message.attribute.templateId;
+    fillMail(templateId);
+  }
+});
+// Function to open Gmail compose window with pre-filled template
+function openGmailCompose(to, subject, message) {
+  var mailUrl = "https://mail.google.com/mail/?view=cm&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(message);
+  window.open(mailUrl, "_blank");
+}
+
+// Function to fill the mail using the template ID
+function fillMail(templateId) {
+  // Retrieve the template from Chrome storage using the template ID
+  chrome.storage.sync.get(templateId, function(result) {
+    var template = result[templateId];
+    if (template) {
+      // Extract information from the table on the website
+      var username = document.querySelector("#w0 tr:nth-child(2) td").textContent.trim();
+      var usermail = document.querySelector("#w0 tr:nth-child(10) span").textContent.trim();
+      var coachName = document.querySelector("#w0 tr:nth-child(7) span").textContent.trim();
+      var coachEmail = document.querySelector("#w0 tr:nth-child(7) a").href;
+      var sessionZeit = document.querySelector("#w0 tr:nth-child(6) div.alert-success").textContent.trim();
+
+      // Get the fields from the template
+      var to = template.to;
+      var subject = template.subject;
+      var message = template.message;
+      const mailRegex = /[a-zA-Z0-9._+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+/;
+      coachEmail = coachEmail.match(mailRegex)[0];
+
+      // Replace placeholders with extracted values
+      to = to.replace(/<username>/g, username);
+      to = to.replace(/<coachname>/g, coachName);
+      to = to.replace(/<coachemail>/g, coachEmail);
+      to = to.replace(/<sessionzeit>/g, sessionZeit);
+      to = to.replace(/<usermail>/g, usermail);
+      subject = subject.replace(/<usermail>/g, usermail);
+      subject = subject.replace(/<username>/g, username);
+      subject = subject.replace(/<coachname>/g, coachName);
+      subject = subject.replace(/<coachemail>/g, coachEmail);
+      subject = subject.replace(/<sessionzeit>/g, sessionZeit);
+      message = message.replace(/<username>/g, username);
+      message = message.replace(/<usermail>/g, usermail);
+      message = message.replace(/<coachname>/g, coachName);
+      message = message.replace(/<coachemail>/g, coachEmail);
+      message = message.replace(/<sessionzeit>/g, sessionZeit);
+
+      // Open new window with Gmail and pre-filled template
+      openGmailCompose(to, subject, message);
+
+      // Display a success message or perform any other desired action
+      console.log("Mail filled successfully!");
+    } else {
+      alert("Template not found!");
+    }
+  });
+}
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------------------
+
+
+
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.message === "extractUsernames") {
     // execute code to extract usernames
   }
