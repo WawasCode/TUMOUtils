@@ -1,5 +1,4 @@
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  console.log("message resived")
   if (message.action === "fillMail") {
     var templateId = message.attribute.templateId;
     fillMail(templateId);
@@ -10,6 +9,32 @@ function openGmailCompose(to, subject, message) {
   var mailUrl = "https://mail.google.com/mail/?view=cm&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(message);
   window.open(mailUrl, "_blank");
 }
+function resolvePlaceholder(str) {
+  var placeholderRegex = /<(\d{2}):(\d{2}):(\d{2})>/;
+
+  // Check if the placeholder exists in the string
+  if (!placeholderRegex.test(str)) {
+    return str; // Return the original string if the placeholder is not found
+  }
+
+  var now = new Date();
+  var matches = str.match(placeholderRegex);
+  var days = parseInt(matches[1]);
+  var hours = parseInt(matches[2]);
+  var minutes = parseInt(matches[3]);
+
+  var resolvedDate = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
+  var resolvedDay = resolvedDate.getDate();
+  var resolvedMonth = resolvedDate.getMonth() + 1; // Month is zero-indexed, so we add 1
+  var resolvedYear = resolvedDate.getFullYear();
+
+  var resolvedTime = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+
+  var resolvedString = str.replace(placeholderRegex, resolvedDay + '.' + resolvedMonth + '.' + resolvedYear + ' um ' + resolvedTime);
+
+  return resolvedString;
+}
+
 
 // Function to fill the mail using the template ID
 function fillMail(templateId) {
@@ -24,6 +49,7 @@ function fillMail(templateId) {
       var coachEmail = document.querySelector("#w0 tr:nth-child(7) a").href;
       var sessionZeit = document.querySelector("#w0 tr:nth-child(6) div.alert-success").textContent.trim();
 
+
       // Get the fields from the template
       var to = template.to;
       var subject = template.subject;
@@ -37,22 +63,25 @@ function fillMail(templateId) {
       to = to.replace(/<coachemail>/g, coachEmail);
       to = to.replace(/<sessionzeit>/g, sessionZeit);
       to = to.replace(/<usermail>/g, usermail);
+
       subject = subject.replace(/<usermail>/g, usermail);
       subject = subject.replace(/<username>/g, username);
       subject = subject.replace(/<coachname>/g, coachName);
       subject = subject.replace(/<coachemail>/g, coachEmail);
       subject = subject.replace(/<sessionzeit>/g, sessionZeit);
+      subject = resolvePlaceholder(subject)
+
       message = message.replace(/<username>/g, username);
       message = message.replace(/<usermail>/g, usermail);
       message = message.replace(/<coachname>/g, coachName);
       message = message.replace(/<coachemail>/g, coachEmail);
       message = message.replace(/<sessionzeit>/g, sessionZeit);
+      message = resolvePlaceholder(message)
 
       // Open new window with Gmail and pre-filled template
       openGmailCompose(to, subject, message);
 
       // Display a success message or perform any other desired action
-      console.log("Mail filled successfully!");
     } else {
       alert("Template not found!");
     }
@@ -94,7 +123,6 @@ if (modal) {
   if (header) {
     // Get the workshop name and start date from the header text
     var headerText = header.querySelector("h3").textContent;
-    console.log(headerText)
     var matches = headerText.match(/Users in (.+),\s+(.+),\s+(.+),\s+(.+)/);
 
     if (matches) {
